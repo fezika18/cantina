@@ -4,47 +4,49 @@
 
 Sistema de gerenciamento de produtos, clientes e pedidos de uma cantina, desenvolvido em Java com Spring Boot e PostgreSQL.
 
-A aplicação disponibiliza endpoints REST para consultar clientes, cadastrar e administrar produtos, registrar pedidos e cancelar pedidos. As operações de pedido respeitam as regras de estoque e o registro histórico do preço do produto.
+A aplicação disponibiliza uma API REST para consultar clientes, cadastrar e administrar produtos, registrar pedidos e cancelar pedidos. O sistema aplica regras de negócio para controlar o estoque e preservar o preço registrado no momento da criação de cada pedido.
 
 ## 2. Tecnologias utilizadas
 
-- Java 21
+- Java 17
 - Spring Boot
 - Maven
 - PostgreSQL
 - JDBC / JdbcTemplate
 - JUnit 5
+- Mockito
 - Postman
 - Git e GitHub
 
 ## 3. Arquitetura
 
-O projeto está organizado em camadas:
+O projeto utiliza uma arquitetura em camadas, separando as responsabilidades:
 
-- **Controller:** recebe as requisições HTTP e disponibiliza os endpoints.
-- **Service:** concentra as regras de negócio e validações.
-- **Repository:** executa as operações no banco de dados usando JDBC.
-- **Domain:** contém a representação dos objetos do domínio.
-- **Algoritmo:** implementa os algoritmos de busca e ordenação de produtos.
+- **Controller:** recebe as requisições HTTP e encaminha as operações para os serviços.
+- **Service:** implementa as regras de negócio e valida as operações.
+- **Repository:** executa as consultas e alterações no PostgreSQL utilizando JDBC.
+- **Domain:** representa as entidades do domínio, como Produto, Cliente e Pedido.
+- **Algoritmo:** contém os algoritmos de busca e ordenação de produtos, separados dos endpoints da API.
 
-O fluxo principal é:
+Fluxo principal:
 
 `Postman → Controller → Service → Repository → PostgreSQL`
 
 ## 4. Regras de negócio
 
-- Os clientes são consultados, mas não podem ser cadastrados ou alterados pela API.
-- Para registrar um pedido, o cliente e o produto devem existir.
+- Os clientes são somente consultados pela API.
+- O cliente e o produto devem existir para que um pedido seja registrado.
 - O produto precisa ter estoque disponível.
-- Cada pedido registra um produto e uma unidade.
-- O preço é registrado no momento da criação do pedido.
+- Cada pedido registra um único produto e uma unidade.
+- O preço é copiado para o pedido no momento da criação, preservando o histórico.
 - A criação do pedido e a redução do estoque devem ocorrer na mesma transação.
-- O cancelamento só pode ocorrer uma vez para cada pedido ativo.
-- Ao cancelar um pedido, a unidade correspondente retorna ao estoque.
-- As alterações de estoque relacionadas aos pedidos devem respeitar o histórico de pedidos.
-- A exclusão de produtos com histórico de pedidos deve ser impedida.
+- O cancelamento e a devolução da unidade ao estoque também devem ocorrer na mesma transação.
+- Um pedido cancelado não pode ser cancelado novamente.
+- O estoque não pode ficar negativo.
+- Produtos com histórico de pedidos não podem ser excluídos.
+- A atualização cadastral do produto permite alterar o nome e o preço, sem movimentar o estoque.
 
-## 5. Endpoints
+## 5. Endpoints da API
 
 ### Clientes
 
@@ -60,49 +62,50 @@ O fluxo principal é:
 | POST | `/produtos` | Cadastrar produto |
 | GET | `/produtos` | Listar produtos |
 | GET | `/produtos/{id}` | Consultar produto por ID |
-| PUT | `/produtos/{id}` | Atualizar produto |
-| DELETE | `/produtos/{id}` | Excluir produto, respeitando as regras de histórico |
+| PUT | `/produtos/{id}` | Atualizar nome e preço |
+| DELETE | `/produtos/{id}` | Excluir produto quando permitido |
 
 ### Pedidos
 
 | Método | Endpoint | Operação |
 |---|---|---|
-| POST | `/pedidos` | Criar pedido |
-| GET | `/pedidos` | Listar pedidos |
-| GET | `/pedidos/{id}` | Consultar pedido por ID |
-| PATCH | `/pedidos/{id}/cancelamento` | Cancelar pedido |
+| POST | `/pedidos` | Criar pedido e reduzir o estoque |
+| GET | `/pedidos` | Listar o histórico de pedidos |
+| PATCH | `/pedidos/{id}/cancelamento` | Cancelar pedido e devolver uma unidade ao estoque |
+
+O projeto também implementa `GET /pedidos/{id}` para consultar um pedido pelo identificador.
 
 ## 6. Módulo de algoritmos
 
-O módulo `AlgoritmosProduto` implementa:
+O módulo `AlgoritmosProduto` implementa três algoritmos independentes das rotas REST.
 
-- **Busca linear:** percorre os produtos até encontrar o ID desejado. Complexidade de tempo: `O(n)`.
-- **Busca binária:** divide sucessivamente o intervalo de busca pela metade. Complexidade de tempo: `O(log n)`. Requer que a lista esteja previamente ordenada pelo ID.
-- **Bubble Sort:** compara elementos vizinhos e troca suas posições quando necessário. Complexidade de tempo média e de pior caso: `O(n²)`.
+- **Busca linear:** percorre a lista até encontrar o produto pelo ID ou concluir que ele não existe.
+- **Busca binária:** reduz pela metade o intervalo pesquisado a cada iteração. A lista deve estar previamente ordenada pelo ID.
+- **Bubble Sort:** compara elementos vizinhos e troca suas posições quando necessário. A implementação retorna uma nova lista ordenada por ID, sem alterar a lista original.
 
-O Bubble Sort retorna uma nova lista ordenada por ID, sem alterar a lista recebida originalmente.
+As complexidades representam o tempo de execução esperado em função da quantidade de elementos.
 
 ## 7. Execução do projeto
 
 ### Pré-requisitos
 
-- Java 21 instalado ou configurado no ambiente.
-- Banco PostgreSQL acessível.
-- Maven Wrapper incluído no projeto.
+- JDK 17 ou superior.
+- Acesso ao banco PostgreSQL utilizado pelo projeto.
+- Maven Wrapper incluído no repositório.
 
 ### Configuração do banco
 
-Configure as variáveis de ambiente utilizadas em `application.properties`:
+O arquivo `application.properties` utiliza as seguintes variáveis:
 
 - `DB_URL`
 - `DB_USERNAME`
 - `DB_PASSWORD`
 
-No ambiente local, elas podem ser configuradas no arquivo `.env`, que não deve ser enviado ao repositório com credenciais reais.
+Configure os valores no ambiente local ou no arquivo `.env` utilizado pela aplicação. Não versionar credenciais reais nem o arquivo `.env`.
 
 ### Compilação
 
-No terminal, na pasta raiz do projeto:
+Na pasta raiz do projeto, execute:
 
 ```powershell
 .\mvnw.cmd compile
@@ -120,46 +123,83 @@ No terminal, na pasta raiz do projeto:
 .\mvnw.cmd spring-boot:run
 ```
 
-A aplicação utiliza a porta `8080`, salvo configuração diferente.
+Por padrão, a API utiliza a porta `8080`, salvo configuração diferente.
 
-## 8. Testes
+## 8. Testes automatizados
 
-Os testes automatizados do módulo de algoritmos utilizam JUnit 5 e cobrem:
+Os testes são executados pelo Maven com JUnit 5. O Mockito é utilizado para simular dependências nos testes de unidade dos serviços.
 
-- Busca linear de um produto existente.
-- Busca linear de um produto inexistente.
-- Busca binária em uma lista ordenada.
-- Ordenação crescente por ID com Bubble Sort.
-- Preservação da lista original durante a ordenação.
+A execução registrada apresentou o seguinte resultado:
 
-**Comando de execução:** `.\mvnw.cmd test`
+| Resultado | Quantidade |
+|---|---:|
+| Testes executados | 10 |
+| Falhas | 0 |
+| Erros | 0 |
+| Ignorados | 0 |
 
-**Evidência:** adicionar uma captura do terminal mostrando o resultado da execução e a quantidade de testes aprovados.
+Os testes abrangem:
 
-## 9. Decisões de implementação
+- Busca linear de produto existente e inexistente.
+- Busca binária em lista ordenada.
+- Ordenação crescente e preservação da lista original.
+- Rejeição de cadastro com preço igual a zero.
+- Rejeição de cadastro com estoque negativo.
+- Rejeição de pedido com cliente inexistente.
+- Rejeição de pedido de produto sem estoque.
+- Rejeição de cancelamento repetido.
+- Inicialização do contexto da aplicação Spring Boot.
 
-- Utilização de JDBC/JdbcTemplate para persistência em PostgreSQL.
-- Separação das responsabilidades entre Controller, Service e Repository.
-- Uso de transações nas operações de criação e cancelamento de pedidos.
-- Registro do preço histórico no momento da criação do pedido.
-- Implementação dos algoritmos em um módulo independente dos endpoints REST.
-- Uso de uma coleção de produtos em memória nos testes de algoritmos.
+**Evidência:** `docs/evidencias/junit/resultado-maven.png`
 
-## 10. Uso de inteligência artificial
+O resultado deve ser atualizado caso os testes sejam modificados posteriormente.
 
-Ferramentas de inteligência artificial foram utilizadas como apoio ao desenvolvimento, à compreensão de conceitos, à implementação e à revisão de código. As sugestões foram aplicadas e verificadas no projeto pelos integrantes, com execução de compilação e testes.
+## 9. Refatoração realizada
 
-## 11. Integrantes
+**Problema identificado:** as validações de nome e preço estavam duplicadas nos métodos de cadastro e atualização de produtos.
 
-- Preencher com os nomes completos dos integrantes do grupo.
+**Alteração:** as validações compartilhadas foram extraídas para o método privado `validarDadosProduto()`, utilizado pelas operações de cadastro e atualização. A validação de estoque permaneceu no cadastro por ser específica dessa operação.
 
-## 12. Evidências e materiais da entrega
+**Validação:** os testes automatizados existentes foram executados novamente pelo Maven, incluindo cenários de preço inválido e estoque negativo.
 
-Adicionar os links ou caminhos dos materiais finais:
+**Benefício:** redução da duplicação de código e centralização das regras de validação compartilhadas.
 
-- Repositório GitHub.
-- Coleção oficial do Postman e evidências dos endpoints.
-- Diagrama UML atualizado conforme o código.
-- Capturas dos testes automatizados.
-- Evidências do histórico de commits e das refatorações.
-- Link do vídeo de apresentação, respeitando o limite de duração estabelecido pelo professor.
+## 10. Evidências da API
+
+As capturas das requisições e respostas do Postman estão organizadas em `docs/evidencias/postman/`.
+
+- Consulta de clientes.
+- Cadastro, consulta e atualização de produtos.
+- Exclusão de produto sem histórico.
+- Criação e consulta de pedidos.
+- Cancelamento de pedido.
+- Tentativa de cancelamento repetido.
+- Tentativa de pedido com produto sem estoque.
+- Tentativa de exclusão de produto com pedido aberto.
+- Tentativa de pedido com cliente inexistente.
+
+## 11. Diagrama UML
+
+O diagrama de classes (UML) estão localizados no diretório abaixo:
+
+- `docs/diagrama-classes.drawio` — diagrama editável.
+- `docs/diagrama-classes.png` — exportação para visualização.
+
+O diagrama deve ser mantido coerente com o código Java entregue.
+
+## 12. Uso de inteligência artificial
+
+Ferramentas de inteligência artificial foram utilizadas como apoio à compreensão de conceitos, implementação, revisão e documentação do projeto. O código foi compilado e testado, e os integrantes devem compreender as decisões técnicas presentes na entrega.
+
+## 13. Integrantes
+
+- Felipe Rogério — RA 5425921
+- Julia Diniz — RA 5371333
+- Vithor Andrade — RA 5373727
+- Eduardo Mateus — RA 5456681
+- Thomas Medeiros — RA 5417813
+
+## 14. Repositório e apresentação
+
+- [Repositório GitHub do projeto](https://github.com/fezika18/cantina)
+- [Diretório da apresentação](`docs/`)

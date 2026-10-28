@@ -23,19 +23,9 @@ public class ProdutoService {
         return produtoRepository.buscarPorId(id);
     }
 
+    
     public int cadastrar(String nome, double preco, int estoque) {
-
-        if (nome == null || nome.isBlank()) {
-            throw new IllegalArgumentException(
-                "O nome do produto é obrigatório."
-            );
-        }
-
-        if (preco <= 0 || !Double.isFinite(preco)) {
-            throw new IllegalArgumentException(
-                "O preço deve ser maior que zero."
-            );
-        }
+        validarDadosProduto(nome, preco);
 
         if (estoque < 0) {
             throw new IllegalArgumentException(
@@ -47,6 +37,12 @@ public class ProdutoService {
     }
 
     public int atualizar(int id, String nome, double preco) {
+        validarDadosProduto(nome, preco);
+
+        return produtoRepository.atualizar(id, nome, preco);
+    }
+
+    private void validarDadosProduto(String nome, double preco) {
         if (nome == null || nome.isBlank()) {
             throw new IllegalArgumentException(
                 "O nome do produto é obrigatório."
@@ -58,9 +54,8 @@ public class ProdutoService {
                 "O preço deve ser maior que zero."
             );
         }
-
-        return produtoRepository.atualizar(id, nome, preco);
     }
+
 
     public void excluir(int id) {
         Map<String, Object> produto = buscarPorId(id);
