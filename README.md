@@ -127,7 +127,7 @@ Por padrão, a API utiliza a porta `8080`, salvo configuração diferente.
 
 ## 8. Testes automatizados
 
-Os testes são executados pelo Maven com JUnit 5. O Mockito é utilizado para simular dependências nos testes de unidade dos serviços.
+Os testes são executados pelo Maven com JUnit 5.
 
 A execução registrada apresentou o seguinte resultado:
 
@@ -150,9 +150,7 @@ Os testes abrangem:
 - Rejeição de cancelamento repetido.
 - Inicialização do contexto da aplicação Spring Boot.
 
-**Evidência:** `docs/evidencias/junit/resultado-maven.png`
-
-O resultado deve ser atualizado caso os testes sejam modificados posteriormente.
+**Evidência:** `docs/evidencias/Junit/resultado-maven.png`
 
 ## 9. Refatoração realizada
 
@@ -166,7 +164,7 @@ O resultado deve ser atualizado caso os testes sejam modificados posteriormente.
 
 ## 10. Evidências da API
 
-As capturas das requisições e respostas do Postman estão organizadas em `docs/evidencias/postman/`.
+As capturas das requisições e respostas do Postman estão organizadas em `docs/evidencias/Postman/`.
 
 - Consulta de clientes.
 - Cadastro, consulta e atualização de produtos.
