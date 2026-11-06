@@ -64,4 +64,24 @@ class PedidoServiceTest {
         verify(pedidoRepository, never())
                 .inserirPedido(anyInt(), anyInt(), anyDouble());
     }
+
+    @Test
+    void naoDeveCancelarPedidoQueJaFoiCancelado() {
+        when(pedidoRepository.buscarParaCancelamento(10))
+                .thenReturn(Map.of(
+                        "id", 10,
+                        "produto_id", 2,
+                        "situacao", "CANCELADO"
+                ));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> pedidoService.cancelarPedido(10)
+        );
+
+        verify(pedidoRepository, never())
+                .cancelarPedido(anyInt());
+        verify(pedidoRepository, never())
+                .devolverEstoque(anyInt());
+    }
 }

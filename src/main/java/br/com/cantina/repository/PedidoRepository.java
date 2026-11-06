@@ -105,4 +105,43 @@ public class PedidoRepository {
 
         return resultado.get(0);
     }
+
+    public Map<String, Object> buscarParaCancelamento(int id) {
+        String sql = """
+            SELECT id, produto_id, situacao
+            FROM pedidos
+            WHERE id = ?
+            FOR UPDATE
+            """;
+
+        List<Map<String, Object>> resultado =
+                jdbcTemplate.queryForList(sql, id);
+
+        if (resultado.isEmpty()) {
+            return null;
+        }
+
+        return resultado.get(0);
+    }
+
+    public int cancelarPedido(int id) {
+        String sql = """
+            UPDATE pedidos
+            SET situacao = 'CANCELADO'
+            WHERE id = ?
+            AND situacao = 'ATIVO'
+            """;
+
+        return jdbcTemplate.update(sql, id);
+    }
+
+    public int devolverEstoque(int produtoId) {
+        String sql = """
+            UPDATE produtos
+            SET estoque_disponivel = estoque_disponivel + 1
+            WHERE id = ?
+            """;
+
+        return jdbcTemplate.update(sql, produtoId);
+    }
 }
