@@ -76,4 +76,50 @@ public class PedidoService {
 
         return pedidoRepository.buscarPorId(id);
     }
+
+    @Transactional
+    public void cancelarPedido(int id) {
+        if (id <= 0) {
+            throw new IllegalArgumentException(
+                "O ID do pedido deve ser maior que zero."
+            );
+        }
+
+        Map<String, Object> pedido =
+                pedidoRepository.buscarParaCancelamento(id);
+
+        if (pedido == null) {
+            throw new IllegalArgumentException(
+                "Pedido não encontrado."
+            );
+        }
+
+        String situacao = pedido.get("situacao").toString();
+
+        if (!"ATIVO".equals(situacao)) {
+            throw new IllegalArgumentException(
+                "Este pedido já foi cancelado."
+            );
+        }
+
+        int linhasAlteradas = pedidoRepository.cancelarPedido(id);
+
+        if (linhasAlteradas == 0) {
+            throw new IllegalArgumentException(
+                "Não foi possível cancelar o pedido."
+            );
+        }
+
+        int produtoId =
+                ((Number) pedido.get("produto_id")).intValue();
+
+        int linhasEstoque =
+                pedidoRepository.devolverEstoque(produtoId);
+
+        if (linhasEstoque == 0) {
+            throw new IllegalStateException(
+                "Não foi possível devolver o estoque."
+            );
+        }
+    }
 }

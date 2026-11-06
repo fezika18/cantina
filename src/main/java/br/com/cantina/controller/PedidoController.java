@@ -56,4 +56,17 @@ public class PedidoController {
 
         return ResponseEntity.ok(pedido);
     }
+
+    @PatchMapping("/{id}/cancelamento")
+    public ResponseEntity<Map<String, String>> cancelarPedido(
+            @PathVariable int id) {
+
+        pedidoService.cancelarPedido(id);
+
+        Map<String, String> resposta = Map.of(
+            "mensagem", "Pedido cancelado com sucesso!"
+        );
+
+        return ResponseEntity.ok(resposta);
+    }
 }
