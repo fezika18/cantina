@@ -20,6 +20,15 @@ Sistema de gerenciamento de produtos, clientes e pedidos de uma cantina, desenvo
 | PUT | `/produtos/{id}` | Atualizar nome e preço |
 | DELETE | `/produtos/{id}` | Excluir produto quando permitido |
 
+### Pedidos
+
+| Método | Endpoint | Operação |
+|---|---|---|
+| POST | `/pedidos` | Criar pedido e reduzir o estoque |
+| GET | `/pedidos` | Listar o histórico de pedidos |
+
+O projeto também implementa `GET /pedidos/{id}` para consultar um pedido pelo identificador.
+
 ## 6. Módulo de algoritmos
 
 O módulo `AlgoritmosProduto` implementa três algoritmos independentes das rotas REST.
