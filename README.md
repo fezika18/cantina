@@ -181,7 +181,6 @@ As capturas das requisições e respostas do Postman estão organizadas em `docs
 O diagrama de classes (UML) estão localizados no diretório abaixo:
 
 - `docs/diagrama-classes.drawio` — diagrama editável.
-- `docs/diagrama-classes.png` — exportação para visualização.
 
 O diagrama deve ser mantido coerente com o código Java entregue.
 
@@ -199,5 +198,4 @@ Ferramentas de inteligência artificial foram utilizadas como apoio à compreens
 
 ## 14. Repositório e apresentação
 
-- [Repositório GitHub do projeto](https://github.com/fezika18/cantina)
-- [Diretório da apresentação](`docs/`)
+- [Diretório da apresentação](https://youtu.be/yDzLubYzBx4)
